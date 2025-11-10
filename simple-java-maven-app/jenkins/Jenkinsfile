@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven 3.6.3'
+    }
+
+    environment {
+        SONAR_TOKEN = credentials('sonar-token') // 👈 linked credential
+    }
+
     stages {
         stage('Build') {
             steps {
@@ -14,7 +22,12 @@ pipeline {
             steps {
                 dir('simple-java-maven-app') {
                     withSonarQubeEnv('SonarQube') {
-                        sh 'mvn -B clean verify sonar:sonar'
+                        sh '''
+                            mvn -B clean verify sonar:sonar \
+                              -Dsonar.projectKey=my-app \
+                              -Dsonar.host.url=http://localhost:9000 \
+                              -Dsonar.token=$SONAR_TOKEN
+                        '''
                     }
                 }
             }
@@ -23,7 +36,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Build and SonarQube analysis completed successfully!'
+            echo '✅ Pipeline completed successfully!'
         }
         failure {
             echo '❌ Pipeline failed — check the console output for details.'
