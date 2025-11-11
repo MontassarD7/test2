@@ -1,5 +1,5 @@
-# Use an existing OpenJDK 17 slim image
-FROM openjdk:17.0.9-jdk-slim
+# Use OpenJDK 17 slim
+FROM eclipse-temurin:17-jdk-jammy
 
 WORKDIR /app
 COPY target/my-app-1.0-SNAPSHOT.jar app.jar
