@@ -18,6 +18,20 @@ pipeline {
             }
         }
 
+        stage('SAST SonarQube Analysis') {
+            steps {
+                dir('simple-java-maven-app') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh '''mvn -B clean verify sonar:sonar \
+                          -Dsonar.projectKey=my-app \
+                          -Dsonar.host.url=http://localhost:9000 \
+                          -Dsonar.token=$SONAR_TOKEN \
+                          -Dsonar.qualitygate.wait=true'''
+                    }
+                }
+            }
+        }
+        
         stage('OWASP Dependency Scan') {
             steps {
                 dir('simple-java-maven-app') {
@@ -55,19 +69,7 @@ pipeline {
     }
 }
 
-        stage('SonarQube Analysis') {
-            steps {
-                dir('simple-java-maven-app') {
-                    withSonarQubeEnv('SonarQube') {
-                        sh '''mvn -B clean verify sonar:sonar \
-                          -Dsonar.projectKey=my-app \
-                          -Dsonar.host.url=http://localhost:9000 \
-                          -Dsonar.token=$SONAR_TOKEN \
-                          -Dsonar.qualitygate.wait=true'''
-                    }
-                }
-            }
-        }
+        
     }
 
     post {
