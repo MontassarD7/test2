@@ -35,15 +35,17 @@ pipeline {
         stage('DAST Scan') {
     steps {
         script {
+            echo "🔍 Running DAST scan with OWASP ZAP..."
             sh '''
-            docker run --rm -v $(pwd)/zap-report:/zap/wrk/:rw \
-            owasp/zap2docker-stable zap-baseline.py \
-            -t http://localhost:8080 \
-            -r zap-report.html
+            docker run --rm \
+                -v $(pwd)/zap-report:/zap/wrk/:rw \
+                zaproxy/zap2docker-stable:latest \
+                zap-baseline.py -t http://localhost:8080 -r zap-report.html
             '''
         }
     }
 }
+
 
         stage('Docker Image Scan') {
     steps {
