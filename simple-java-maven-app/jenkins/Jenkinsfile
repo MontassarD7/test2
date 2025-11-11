@@ -63,11 +63,34 @@ pipeline {
     steps {
         script {
             echo '🔍 Running Trivy Docker image scan...'
-            sh 'trivy image --timeout 10m --exit-code 0 --no-progress --format table -o trivy-report.txt eclipse-temurin:17'
-            echo '✅ Trivy scan complete. Report saved as trivy-report.txt'
+            
+            // Full JSON report
+            sh '''
+                trivy image \
+                    --timeout 10m \
+                    --exit-code 0 \
+                    --no-progress \
+                    --format json \
+                    -o trivy-report.json \
+                    eclipse-temurin:17
+
+                # Optional: print a short summary to console
+                trivy image \
+                    --timeout 10m \
+                    --exit-code 0 \
+                    --no-progress \
+                    --format table \
+                    eclipse-temurin:17 | head -n 20
+            '''
+            
+            echo '✅ Trivy scan complete. Report saved as trivy-report.json'
+            
+            // Archive report in Jenkins
+            archiveArtifacts artifacts: 'trivy-report.json', allowEmptyArchive: true
         }
     }
 }
+
 
         
     }
