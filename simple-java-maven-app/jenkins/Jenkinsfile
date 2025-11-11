@@ -34,9 +34,14 @@ pipeline {
 
         stage('DAST Scan') {
     steps {
-        sh 'zap-cli start && zap-cli quick-scan http://staging.myapp.local && zap-cli stop'
+        echo "🔍 Running DAST scan with Nikto..."
+        sh '''
+            nikto -h http://staging.monsite.com:8080 -output nikto-report.html
+        '''
+        archiveArtifacts artifacts: 'nikto-report.html', allowEmptyArchive: true
     }
 }
+
 
 
 
