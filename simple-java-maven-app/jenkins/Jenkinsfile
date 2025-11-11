@@ -18,6 +18,14 @@ pipeline {
             }
         }
 
+        stage('Dependency Scan') {
+            steps {
+                dir('simple-java-maven-app') {
+                    sh 'mvn org.owasp:dependency-check-maven:check -DfailOnCVSS=7'
+                }
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 dir('simple-java-maven-app') {
