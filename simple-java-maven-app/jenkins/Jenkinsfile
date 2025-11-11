@@ -26,6 +26,21 @@ pipeline {
             }
         }
 
+        stage('Docker Image Scan') {
+            steps {
+                script {
+                    // Build Docker image
+                    sh 'docker build -t my-app:latest simple-java-maven-app/'
+
+                    // Scan image with Trivy
+                    sh '''
+                      docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                      aquasec/trivy image --exit-code 1 --severity CRITICAL,HIGH my-app:latest
+                    '''
+                }
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 dir('simple-java-maven-app') {
@@ -43,7 +58,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline completed successfully!'
+            echo '✅ Pipeline DevSecOps completed successfully!'
         }
         failure {
             echo '❌ Pipeline failed — check the console output for details.'
