@@ -10,6 +10,8 @@ pipeline {
     }
 
     stages {
+
+        // 1️⃣ Build
         stage('Build') {
             steps {
                 dir('simple-java-maven-app') {
@@ -18,6 +20,7 @@ pipeline {
             }
         }
 
+        // 2️⃣ SAST
         stage('SAST SonarQube Analysis') {
             steps {
                 dir('simple-java-maven-app') {
@@ -31,7 +34,8 @@ pipeline {
                 }
             }
         }
-        
+
+        // 3️⃣ OWASP Dependency Scan
         stage('OWASP Dependency Scan') {
             steps {
                 dir('simple-java-maven-app') {
@@ -40,79 +44,80 @@ pipeline {
             }
         }
 
+        // 4️⃣ Secrets Scan
         stage('Secrets Scan') {
-    steps {
-        sh 'gitleaks detect --source . --exit-code 1'
-    }
-}
-
-        stage('DAST Scan') {
-    steps {
-        echo "🔍 Running DAST scan with Nikto..."
-        sh '''
-            nikto -h http://staging.monsite.com:8080 -output nikto-report.html
-        '''
-        archiveArtifacts artifacts: 'nikto-report.html', allowEmptyArchive: true
-    }
-}
-
-
-
-
-        stage('Docker Image Scan') {
-    steps {
-        script {
-            echo '🔍 Running Trivy Docker image scan...'
-            
-            // Full JSON report
-            sh '''
-                trivy image \
-                    --timeout 10m \
-                    --exit-code 0 \
-                    --no-progress \
-                    --format json \
-                    -o trivy-report.json \
-                    eclipse-temurin:17
-
-                # Optional: print a short summary to console
-                trivy image \
-                    --timeout 10m \
-                    --exit-code 0 \
-                    --no-progress \
-                    --format table \
-                    eclipse-temurin:17 | head -n 20
-            '''
-            
-            echo '✅ Trivy scan complete. Report saved as trivy-report.json'
-            
-            // Archive report in Jenkins
-            archiveArtifacts artifacts: 'trivy-report.json', allowEmptyArchive: true
+            steps {
+                sh 'gitleaks detect --source . --exit-code 1'
+            }
         }
-    }
-}
 
+        // 5️⃣ Build Docker Image (before image scanning or deployment)
         stage('Build Docker Image') {
-    steps {
-        echo '🐳 Building Docker image...'
-        sh '''
-            docker build -t myapp:latest simple-java-maven-app/
-        '''
-    }
-}
+            steps {
+                echo '🐳 Building Docker image...'
+                sh '''
+                    docker build -t myapp:latest simple-java-maven-app/
+                '''
+            }
+        }
 
+        // 6️⃣ Docker Image Scan
+        stage('Docker Image Scan') {
+            steps {
+                script {
+                    echo '🔍 Running Trivy Docker image scan...'
+                    
+                    // Full JSON report
+                    sh '''
+                        trivy image \
+                            --timeout 10m \
+                            --exit-code 0 \
+                            --no-progress \
+                            --format json \
+                            -o trivy-report.json \
+                            eclipse-temurin:17
+
+                        # Optional: print a short summary to console
+                        trivy image \
+                            --timeout 10m \
+                            --exit-code 0 \
+                            --no-progress \
+                            --format table \
+                            eclipse-temurin:17 | head -n 20
+                    '''
+                    
+                    echo '✅ Trivy scan complete. Report saved as trivy-report.json'
+                    
+                    // Archive report in Jenkins
+                    archiveArtifacts artifacts: 'trivy-report.json', allowEmptyArchive: true
+                }
+            }
+        }
+
+        // 7️⃣ DAST Scan
+        stage('DAST Scan') {
+            steps {
+                echo "🔍 Running DAST scan with Nikto..."
+                sh '''
+                    nikto -h http://staging.monsite.com:8080 -output nikto-report.html
+                '''
+                archiveArtifacts artifacts: 'nikto-report.html', allowEmptyArchive: true
+            }
+        }
+
+        // 8️⃣ Deploy
         stage('Deploy') {
-    steps {
-        echo '🚀 Deploying application...'
-        sh '''
-            docker stop myapp || true
-            docker rm myapp || true
-            docker run -d --name myapp -p 8080:8080 myapp:latest
-        '''
-        echo '✅ Deployment complete.'
-    }
-}
+            steps {
+                echo '🚀 Deploying application...'
+                sh '''
+                    docker stop myapp || true
+                    docker rm myapp || true
+                    docker run -d --name myapp -p 8080:8080 myapp:latest
+                '''
+                echo '✅ Deployment complete.'
+            }
+        }
 
-        
     }
 
     post {
